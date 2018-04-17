@@ -20,8 +20,8 @@ import java.util.Optional;
  * @Date 2018/4/17 15:22
  */
 public class QueueReceiver {
-    private static final String BROKER_URL = "tcp://zl52:61616";
-    private static final String QUEUE = "test_queue";
+    private static final String BROKER_URL = Constants.BROKER_URL;
+    private static final String QUEUE = Constants.QUEUE;
 
     private Connection connection;
     private Session session;
