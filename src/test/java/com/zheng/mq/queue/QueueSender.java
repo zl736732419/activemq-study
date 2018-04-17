@@ -1,5 +1,6 @@
-package com.zheng.mq;
+package com.zheng.mq.queue;
 
+import com.zheng.mq.Constants;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.After;
 import org.junit.Before;

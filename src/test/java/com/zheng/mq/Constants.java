@@ -7,4 +7,5 @@ package com.zheng.mq;
 public class Constants {
     public static final String BROKER_URL = "tcp://zl202:61616";
     public static final String QUEUE = "test_queue";
+    public static final String TOPIC = "my_topic";
 }
