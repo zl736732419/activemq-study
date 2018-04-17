@@ -74,8 +74,8 @@ public class QueueSender {
      */
     @Test
     public void testReplyToMessage() throws JMSException {
-        // 创建replyTo Destination
-        Destination replyToDestination = session.createQueue("replyTo");
+        // 创建replyTo Destination，使用临时queue，因为只有当前会话才能访问该队列
+        Destination replyToDestination = session.createTemporaryQueue();
         TextMessage msg = session.createTextMessage("hello consumer");
         msg.setJMSReplyTo(replyToDestination);
         //注册用于接收replyTo响应消息的消息监听器
