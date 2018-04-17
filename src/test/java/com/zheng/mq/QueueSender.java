@@ -9,9 +9,13 @@ import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.io.IOException;
 import java.util.Optional;
 
 /**
@@ -64,6 +68,42 @@ public class QueueSender {
         }
     }
 
+    /**
+     * 生产者发送消息给消费者，但是生产者需要等待从消费者发来确认信息
+     * 以证明消息的确安全送到消费者手上，通过replyto destination来实现
+     */
+    @Test
+    public void testReplyToMessage() throws JMSException {
+        // 创建replyTo Destination
+        Destination replyToDestination = session.createQueue("replyTo");
+        TextMessage msg = session.createTextMessage("hello consumer");
+        msg.setJMSReplyTo(replyToDestination);
+        //注册用于接收replyTo响应消息的消息监听器
+        MessageConsumer consumer = session.createConsumer(replyToDestination);
+        consumer.setMessageListener(new MessageListener() {
+            @Override
+            public void onMessage(Message message) {
+                TextMessage replyMessage = (TextMessage) message;
+                String reply = null;
+                try {
+                    reply = replyMessage.getText();
+                } catch (JMSException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(reply);
+            }
+        });
+        producer.send(msg);
+        System.out.println("消息发送成功!");
+        session.commit();
+        // 这里需要保证程序不退出，需要等待消费者消息响应
+        try {
+            System.in.read();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
 
     @After
     public void cleanup() {

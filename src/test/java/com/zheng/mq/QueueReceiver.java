@@ -10,6 +10,7 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import java.util.Enumeration;
@@ -71,6 +72,18 @@ public class QueueReceiver {
             System.out.println("received Property: " + property);
         }
     }
+    
+    @Test
+    public void testReplyToMessage() throws JMSException {
+        TextMessage msg = (TextMessage) consumer.receive();
+        System.out.println("received: " + msg.getText());
+        // 根据replyTo Destination向生产者发送响应消息
+        Destination replyToDestination = msg.getJMSReplyTo();
+        MessageProducer producer = session.createProducer(replyToDestination);
+        TextMessage response = session.createTextMessage("ok");
+        producer.send(response);
+    }
+    
 
     @Test
     public void receiveTextMessage() throws JMSException {
