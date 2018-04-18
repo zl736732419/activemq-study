@@ -13,6 +13,8 @@
 		http://www.springframework.org/schema/tx/spring-tx-4.1.xsd"
        default-lazy-init="true">
 
+    <context:property-placeholder location="classpath*:applicationContext-broker.properties"/>
+    
     <context:component-scan base-package="com.zheng"/>
     
     <aop:aspectj-autoproxy/>
@@ -22,8 +24,24 @@
         <property name="connectionFactory">
             <bean class="org.apache.activemq.ActiveMQConnectionFactory">
                 <property name="brokerURL">
-                    <value>tcp://zl52:61616</value>
+                    <value>${broker.url}</value>
                 </property>
+            </bean>
+        </property>
+    </bean>
+
+    <!--ssl协议加密-->
+    <bean id="jmsSslFactory" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+        <property name="maxConnections" value="${max.connections}"/>
+        <property name="connectionFactory">
+            <bean class="org.apache.activemq.ActiveMQSslConnectionFactory">
+                <property name="brokerURL">
+                    <value>${ssl.broker.url}</value>
+                </property>
+                <property name="keyStore" value="${ssl.key.store}"/>
+                <property name="trustStore" value="${ssl.trust.store}"/>
+                <property name="keyStorePassword" value="${ssl.key.store.password}"/>
+                <property name="trustStorePassword" value="${ssl.trust.store.password}"/>
             </bean>
         </property>
     </bean>
@@ -39,7 +57,7 @@
     </bean>
     
     <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
-        <property name="connectionFactory" ref="jmsFactory"/>
+        <property name="connectionFactory" ref="jmsSslFactory"/>
         <property name="defaultDestination" ref="destinationTopic"/>
         <property name="messageConverter">
             <bean class="org.springframework.jms.support.converter.SimpleMessageConverter"/>
@@ -50,15 +68,15 @@
     <bean id="myMessageListener" class="com.zheng.mq.spring.MyMessageListener"/>
     
     <bean id="messageListenerContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
-        <property name="connectionFactory" ref="jmsFactory"/>
+        <property name="connectionFactory" ref="jmsSslFactory"/>
         <property name="destination" ref="destinationTopic"/>
         
         <property name="messageListener" ref="myMessageListener"/>
         <!--开启订阅模式-->
         <property name="pubSubDomain" value="true"/>
         <property name="subscriptionDurable" value="true"/>
-        <property name="clientId" value="client001"/>
-        <property name="durableSubscriptionName" value="client001"/>
+        <property name="clientId" value="${client.id}"/>
+        <property name="durableSubscriptionName" value="${durable.subscription.name}"/>
     </bean>
     
 </beans>
