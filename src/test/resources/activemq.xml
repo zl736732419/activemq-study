@@ -1,0 +1,197 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<!-- START SNIPPET: example -->
+<beans
+  xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+    <!-- Allows us to use system properties as variables in this configuration file -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <value>file:${activemq.conf}/credentials.properties</value>
+        </property>
+    </bean>
+
+   <!-- Allows accessing the server log -->
+    <bean id="logQuery" class="io.fabric8.insight.log.log4j.Log4jLogQuery"
+          lazy-init="false" scope="singleton"
+          init-method="start" destroy-method="stop">
+    </bean>
+
+    <!--
+        The <broker> element is used to configure the ActiveMQ broker.
+    -->
+    <broker xmlns="http://activemq.apache.org/schema/core" brokerName="localhost" dataDirectory="${activemq.data}">
+
+        <destinationPolicy>
+            <policyMap>
+              <policyEntries>
+                <policyEntry topic=">" >
+                    <!-- The constantPendingMessageLimitStrategy is used to prevent
+                         slow topic consumers to block producers and affect other consumers
+                         by limiting the number of messages that are retained
+                         For more information, see:
+
+                         http://activemq.apache.org/slow-consumer-handling.html
+
+                    -->
+                  <pendingMessageLimitStrategy>
+                    <constantPendingMessageLimitStrategy limit="1000"/>
+                  </pendingMessageLimitStrategy>
+                </policyEntry>
+              </policyEntries>
+            </policyMap>
+        </destinationPolicy>
+
+
+        <!--
+            The managementContext is used to configure how ActiveMQ is exposed in
+            JMX. By default, ActiveMQ uses the MBean server that is started by
+            the JVM. For more information, see:
+
+            http://activemq.apache.org/jmx.html
+        -->
+        <managementContext>
+            <managementContext createConnector="false"/>
+        </managementContext>
+
+        <!--
+            Configure message persistence for the broker. The default persistence
+            mechanism is the KahaDB store (identified by the kahaDB tag).
+            For more information, see:
+
+            http://activemq.apache.org/persistence.html
+        -->
+        <persistenceAdapter>
+             <kahaDB directory="${activemq.data}/kahadb"/>
+<!--
+	     <jdbcPersistenceAdapter dataSource="#mysql-ds"/>	
+-->
+        </persistenceAdapter>
+<!--采用jdbc&journal结合的方式-->
+<!--
+	<persistenceFactory>
+        	<journalPersistenceAdapterFactory 
+            	journalLogFiles="4"
+            	journalLogFileSize="33554432"
+            	useJournal="true"
+            	useQuickJournal="true"
+            	dataSource="#mysql-ds"
+            	dataDirectory="${activemq.data}/activemq-data"
+        	/>
+    	</persistenceFactory>
+-->
+          <!--
+            The systemUsage controls the maximum amount of space the broker will
+            use before disabling caching and/or slowing down producers. For more information, see:
+            http://activemq.apache.org/producer-flow-control.html
+          -->
+          <systemUsage>
+            <systemUsage>
+                <memoryUsage>
+                    <memoryUsage percentOfJvmHeap="70" />
+                </memoryUsage>
+                <storeUsage>
+                    <storeUsage limit="100 gb"/>
+                </storeUsage>
+                <tempUsage>
+                    <tempUsage limit="50 gb"/>
+                </tempUsage>
+            </systemUsage>
+        </systemUsage>
+
+        <!--
+            The transport connectors expose ActiveMQ over a given protocol to
+            clients and other brokers. For more information, see:
+
+            http://activemq.apache.org/configuring-transports.html
+        -->
+        <transportConnectors>
+            <!-- DOS protection, limit concurrent connections to 1000 and frame size to 100MB -->
+            <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="amqp" uri="amqp://0.0.0.0:5672?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="stomp" uri="stomp://0.0.0.0:61613?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="mqtt" uri="mqtt://0.0.0.0:1883?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="ws" uri="ws://0.0.0.0:61614?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+        </transportConnectors>
+
+        <!-- destroy the spring context on shutdown to stop jetty -->
+        <shutdownHooks>
+            <bean xmlns="http://www.springframework.org/schema/beans" class="org.apache.activemq.hooks.SpringContextHook" />
+        </shutdownHooks>
+
+    </broker>
+
+    <!--alibaba druid连接池，需要引入druid.jar-->
+    <bean id="mysql-ds" class="com.alibaba.druid.pool.DruidDataSource">
+    	<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+    	<property name="url" value="jdbc:mysql://zl202:3306/activemq" />
+    	<property name="username" value="root" />
+    	<property name="password" value="root" />
+    	<!-- 初始化连接大小 -->
+    	<property name="initialSize" value="0" />
+    	<!-- 连接池最大使用连接数量 -->
+    	<property name="maxActive" value="20" />
+    	<!-- 连接池最小空闲 -->
+    	<property name="minIdle" value="0" />
+    	<!-- 获取连接最大等待时间 -->
+    	<property name="maxWait" value="60000" />
+
+    	<property name="validationQuery"><value>SELECT 1</value></property> 
+    	<property name="testOnBorrow" value="false" />
+    	<property name="testOnReturn" value="false" />
+    	<property name="testWhileIdle" value="true" />
+
+    	<!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+    	<property name="timeBetweenEvictionRunsMillis" value="60000" />
+    	<!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+    	<property name="minEvictableIdleTimeMillis" value="25200000" />
+
+    	<!-- 打开removeAbandoned功能 -->
+    	<property name="removeAbandoned" value="true" />
+    	<!-- 1800秒，也就是30分钟 -->
+    	<property name="removeAbandonedTimeout" value="1800" />
+    	<!-- 关闭abanded连接时输出错误日志 -->
+    	<property name="logAbandoned" value="true" />
+
+    	<!-- 监控数据库 -->
+    	<!-- <property name="filters" value="stat" /> -->
+    	<property name="filters" value="mergeStat" />
+    </bean>
+
+
+    <!--dbcp连接池，需要引入dbcp相关jar commons-pool.jar,commons-dbcp.jar-->	
+    <bean id="mysql-dbcp-ds" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+  	<property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+  	<property name="url" value="jdbc:mysql://zl202/activemq?relaxAutoCommit=true&amp;useUnicode=true&amp;characterEncoding=utf-8"/>
+  	<property name="username" value="root"/>
+  	<property name="password" value="root"/>
+  	<property name="poolPreparedStatements" value="true"/>
+    </bean>
+
+    <!--
+        Enable web consoles, REST and Ajax APIs and demos
+        The web consoles requires by default login, you can disable this in the jetty.xml file
+
+        Take a look at ${ACTIVEMQ_HOME}/conf/jetty.xml for more details
+    -->
+    <import resource="jetty.xml"/>
+
+</beans>
+<!-- END SNIPPET: example -->
