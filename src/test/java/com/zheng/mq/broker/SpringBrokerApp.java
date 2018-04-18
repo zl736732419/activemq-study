@@ -10,6 +10,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class SpringBrokerApp {
     
     public static void main(String[] args) {
-        ApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+        ApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-startWithBroker.xml");
     }
 }
