@@ -19,7 +19,7 @@ import java.util.Optional;
  * @Date 2018/4/17 15:17
  */
 public class QueueSender {
-    private static final String BROKER_URL = Constants.BROKER_URL;
+    private static final String BROKER_URL = Constants.FAIL_OVER_URL;
     private static final String QUEUE = Constants.QUEUE;
 
     private Connection connection;
