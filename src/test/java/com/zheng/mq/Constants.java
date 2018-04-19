@@ -11,8 +11,8 @@ public class Constants {
 //    public static final String BROKER_URL = "ssl://zl52:61619";
 //    public static final String BROKER_URL = "udp://zl52:61620";
 //    public static final String BROKER_URL = "nio://zl52:61618";
-//    public static final String BROKER_URL = "tcp://zl52:61616";
-    public static final String BROKER_URL = "failover:(tcp://zl52:61616,tcp://zl52:61716)?randomize=true";
+    public static final String BROKER_URL = "tcp://zl202:61616";
+    public static final String FAIL_OVER_URL = "failover:(tcp://zl202:61616,tcp://zl202:61716)?randomize=true";
     public static final String QUEUE = "test_queue";
     public static final String TOPIC = "my_topic";
 

@@ -18,7 +18,7 @@ import java.util.Optional;
  * @Date 2018/4/17 15:22
  */
 public class QueueReceiver2 {
-    private static final String BROKER_URL = "tcp://zl52:61716";
+    private static final String BROKER_URL = "tcp://zl202:61716";
     private static final String QUEUE = Constants.QUEUE;
 
     public static void main(String[] args) {
