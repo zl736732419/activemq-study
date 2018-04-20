@@ -37,7 +37,7 @@
     <!--
         The <broker> element is used to configure the ActiveMQ broker.
     -->
-    <broker xmlns="http://activemq.apache.org/schema/core" brokerName="localhost" dataDirectory="${activemq.data}">
+    <broker xmlns="http://activemq.apache.org/schema/core" brokerName="broker1" dataDirectory="${activemq.data}">
 
         <destinationPolicy>
             <policyMap>
@@ -55,6 +55,13 @@
                     <constantPendingMessageLimitStrategy limit="1000"/>
                   </pendingMessageLimitStrategy>
                 </policyEntry>
+<!--
+                <policyEntry queue=">" enableAudit="false">
+			<networkBridgeFilterFactory>
+				<conditionalNetworkBridgeFilterFactory replayWhenNoConsumers="true"/>
+			</networkBridgeFilterFactory>
+		</policyEntry>
+-->
               </policyEntries>
             </policyMap>
         </destinationPolicy>
@@ -79,24 +86,31 @@
             http://activemq.apache.org/persistence.html
         -->
         <persistenceAdapter>
-             <kahaDB directory="${activemq.data}/kahadb"/>
+	<!--
+	    <replicatedLevelDB     
+             directory="${activemq.data}/sharedStoreDB"    
+             replicas="3"
+             bind="tcp://0.0.0.0:0"
+             zkAddress="192.168.1.50:2181,192.168.1.51:2181,192.168.1.52:2181"    
+             zkPassword=""
+             hostname="zl52"
+             zkPath="/activemq/leveldb-stores"   
+	     sync="local_disk"
+             />
+	-->
+
+            <kahaDB directory="${activemq.data}/kahadb"/>
 <!--
-	     <jdbcPersistenceAdapter dataSource="#mysql-ds"/>	
+     	    <levelDB directory="${activemq.data}/sharedBrokerData/leveldb"/>
+            <kahaDB directory="${activemq.data}/sharedBrokerData/kahadb"/>
+	    <amqPersistenceAdapter directory="${activemq.data}/sharedBrokerData/amq"/>
+
+	    <jdbcPersistenceAdapter dataSource="#mysql-ds"/>
 -->
         </persistenceAdapter>
-<!--采用jdbc&journal结合的方式-->
-<!--
-	<persistenceFactory>
-        	<journalPersistenceAdapterFactory 
-            	journalLogFiles="4"
-            	journalLogFileSize="33554432"
-            	useJournal="true"
-            	useQuickJournal="true"
-            	dataSource="#mysql-ds"
-            	dataDirectory="${activemq.data}/activemq-data"
-        	/>
-    	</persistenceFactory>
--->
+
+
+
           <!--
             The systemUsage controls the maximum amount of space the broker will
             use before disabling caching and/or slowing down producers. For more information, see:
@@ -116,6 +130,12 @@
             </systemUsage>
         </systemUsage>
 
+	<sslContext>
+		<sslContext keyStore="file:${activemq.base}/conf/broker1.ks"
+			keyStorePassword="123456"
+			trustStore="file:${activemq.base}/conf/broker1.ts"
+			trustStorePassword="123456"/>
+	</sslContext>
         <!--
             The transport connectors expose ActiveMQ over a given protocol to
             clients and other brokers. For more information, see:
@@ -125,12 +145,21 @@
         <transportConnectors>
             <!-- DOS protection, limit concurrent connections to 1000 and frame size to 100MB -->
             <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="nio" uri="nio://0.0.0.0:61618?trace=true"/>
+            <transportConnector name="ssl" uri="ssl://0.0.0.0:61619?trace=true"/>
+            <transportConnector name="udp" uri="udp://0.0.0.0:61620?trace=true"/>
+            <transportConnector name="http" uri="http://0.0.0.0:61621?trace=true"/>
             <transportConnector name="amqp" uri="amqp://0.0.0.0:5672?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
             <transportConnector name="stomp" uri="stomp://0.0.0.0:61613?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
             <transportConnector name="mqtt" uri="mqtt://0.0.0.0:1883?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
             <transportConnector name="ws" uri="ws://0.0.0.0:61614?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
         </transportConnectors>
 
+<!--
+	<networkConnectors>
+		<networkConnector name="localnetwork" uri="static://(tcp://0.0.0.0:61716)" duplex="true" />
+	</networkConnectors>
+-->
         <!-- destroy the spring context on shutdown to stop jetty -->
         <shutdownHooks>
             <bean xmlns="http://www.springframework.org/schema/beans" class="org.apache.activemq.hooks.SpringContextHook" />
@@ -141,7 +170,7 @@
     <!--alibaba druid连接池，需要引入druid.jar-->
     <bean id="mysql-ds" class="com.alibaba.druid.pool.DruidDataSource">
     	<property name="driverClassName" value="com.mysql.jdbc.Driver" />
-    	<property name="url" value="jdbc:mysql://zl202:3306/activemq" />
+    	<property name="url" value="jdbc:mysql://zl52:3306/activemq?relaxAutoCommit=true" />
     	<property name="username" value="root" />
     	<property name="password" value="root" />
     	<!-- 初始化连接大小 -->
@@ -173,16 +202,6 @@
     	<!-- 监控数据库 -->
     	<!-- <property name="filters" value="stat" /> -->
     	<property name="filters" value="mergeStat" />
-    </bean>
-
-
-    <!--dbcp连接池，需要引入dbcp相关jar commons-pool.jar,commons-dbcp.jar-->	
-    <bean id="mysql-dbcp-ds" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
-  	<property name="driverClassName" value="com.mysql.jdbc.Driver"/>
-  	<property name="url" value="jdbc:mysql://zl202/activemq?relaxAutoCommit=true&amp;useUnicode=true&amp;characterEncoding=utf-8"/>
-  	<property name="username" value="root"/>
-  	<property name="password" value="root"/>
-  	<property name="poolPreparedStatements" value="true"/>
     </bean>
 
     <!--
