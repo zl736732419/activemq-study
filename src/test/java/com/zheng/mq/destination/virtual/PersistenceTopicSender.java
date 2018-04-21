@@ -35,7 +35,7 @@ public class PersistenceTopicSender {
             connection = factory.createConnection();
             session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
             // 虚拟主题
-            String topicName = "VirtualTopic.Orders";
+            String topicName = "VirtualTopic.topic3";
             Destination destination = session.createTopic(topicName);
             producer = session.createProducer(destination);
             // 设置消息生产者传递模式为持久化模式
