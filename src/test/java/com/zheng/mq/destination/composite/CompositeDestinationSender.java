@@ -1,4 +1,4 @@
-package com.zheng.mq.destinatin;
+package com.zheng.mq.destination.composite;
 
 import com.zheng.mq.Constants;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -9,23 +9,22 @@ import org.junit.Test;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import java.util.Optional;
 
 /**
  * @Author zhenglian
- * @Date 2018/4/17 15:22
+ * @Date 2018/4/17 15:17
  */
-public class DestinationQueueReceiver {
-    private static final String BROKER_URL = Constants.FAIL_OVER_URL;
+public class CompositeDestinationSender {
+    private static final String BROKER_URL = Constants.BROKER_URL;
 
     private Connection connection;
     private Session session;
-    private MessageConsumer consumer;
-    
-    private boolean printJMSProperty = false;
+    private MessageProducer producer;
+
 
     @Before
     public void init() {
@@ -35,34 +34,33 @@ public class DestinationQueueReceiver {
             connection.start();
 
             session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-            Destination destination = session.createQueue("test.queue2");
-            consumer = session.createConsumer(destination);
+            // 客户端配置composite destination方式
+//            String queueName = ""test.queue1,test.queue2"";
+            // broker端配置composite com.zheng.mq.destination,<destinationInterceptors>
+            String queueName = "MY.QUEUE";
+            Destination destination = session.createQueue(queueName);
+            producer = session.createProducer(destination);
         } catch (JMSException e) {
             e.printStackTrace();
         }
     }
 
     @Test
-    public void receiveTextMessage() throws JMSException {
-        TextMessage textMessage;
-        String text = null;
+    public void sendTextMessage() throws JMSException {
+        TextMessage msg;
         for (int i = 0; i < 3; i++) {
-            textMessage = (TextMessage) consumer.receive();
-            try {
-                text = textMessage.getText();
-            } catch (JMSException e) {
-                e.printStackTrace();
-            }
-            System.out.println("Received: " + text);
+            msg = session.createTextMessage("message----" + (i + 1));
+            producer.send(msg);
         }
     }
 
     @After
     public void cleanup() {
+        System.out.println("消息发送成功!");
         try {
             session.commit();
-            if (Optional.ofNullable(consumer).isPresent()) {
-                consumer.close();
+            if (Optional.ofNullable(producer).isPresent()) {
+                producer.close();
             }
             if (Optional.ofNullable(session).isPresent()) {
                 session.close();
@@ -73,6 +71,7 @@ public class DestinationQueueReceiver {
         } catch (JMSException e) {
             e.printStackTrace();
         }
-        System.out.println("消息处理完毕!");
     }
+
+
 }

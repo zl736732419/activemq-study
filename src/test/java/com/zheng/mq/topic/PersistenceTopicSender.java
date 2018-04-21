@@ -16,7 +16,7 @@ import javax.jms.TextMessage;
 import java.util.Optional;
 
 /**
- * 非持久Topic消息生产者
+ * 持久Topic消息生产者
  * @Author zhenglian
  * @Date 2018/4/17 15:17
  */

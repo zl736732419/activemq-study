@@ -1,4 +1,4 @@
-package com.zheng.mq.topic;
+package com.zheng.mq.destination.composite;
 
 import com.zheng.mq.Constants;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -7,27 +7,24 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-import javax.jms.Topic;
-import javax.jms.TopicSubscriber;
-import java.util.Enumeration;
 import java.util.Optional;
 
 /**
- * 持久Topic消息接收者
  * @Author zhenglian
  * @Date 2018/4/17 15:22
  */
-public class PersistenceTopicReceiver {
-    private static final String BROKER_URL = Constants.BROKER_URL;
-    private static final String TOPIC = Constants.TOPIC;
+public class DestinationQueueReceiver {
+    private static final String BROKER_URL = Constants.FAIL_OVER_URL;
 
     private Connection connection;
     private Session session;
-    private TopicSubscriber consumer;
-
+    private MessageConsumer consumer;
+    
     private boolean printJMSProperty = false;
 
     @Before
@@ -35,28 +32,13 @@ public class PersistenceTopicReceiver {
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(BROKER_URL);
         try {
             connection = factory.createConnection();
-            // 设置消息订阅者标识ID
-            connection.setClientID("cc1");
-            printJMSPropertyName();
-            session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-            Topic destination = session.createTopic(TOPIC);
-            consumer = session.createDurableSubscriber(destination, "ts1");
-            // 一定要在设置完参数之后再启动
             connection.start();
+
+            session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+            Destination destination = session.createQueue("test.queue2");
+            consumer = session.createConsumer(destination);
         } catch (JMSException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void printJMSPropertyName() throws JMSException {
-        if (!printJMSProperty) {
-            return;
-        }
-        Enumeration<String> propertyNames = connection.getMetaData().getJMSXPropertyNames();
-        String propertyName;
-        while (propertyNames.hasMoreElements()) {
-            propertyName = propertyNames.nextElement();
-            System.out.println(propertyName);
         }
     }
 

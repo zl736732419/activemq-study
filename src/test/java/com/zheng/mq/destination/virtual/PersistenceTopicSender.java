@@ -1,4 +1,4 @@
-package com.zheng.mq.destinatin;
+package com.zheng.mq.destination.virtual;
 
 import com.zheng.mq.Constants;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -7,6 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.jms.Connection;
+import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
@@ -15,10 +16,11 @@ import javax.jms.TextMessage;
 import java.util.Optional;
 
 /**
+ * 持久订阅，通过虚拟主题的方式发布消息
  * @Author zhenglian
  * @Date 2018/4/17 15:17
  */
-public class CompositeDestinationSender {
+public class PersistenceTopicSender {
     private static final String BROKER_URL = Constants.BROKER_URL;
 
     private Connection connection;
@@ -31,15 +33,15 @@ public class CompositeDestinationSender {
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(BROKER_URL);
         try {
             connection = factory.createConnection();
-            connection.start();
-
             session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-            // 客户端配置composite destination方式
-//            String queueName = ""test.queue1,test.queue2"";
-            // broker端配置composite destination,<destinationInterceptors>
-            String queueName = "MY.QUEUE";
-            Destination destination = session.createQueue(queueName);
+            // 虚拟主题
+            String topicName = "VirtualTopic.Orders";
+            Destination destination = session.createTopic(topicName);
             producer = session.createProducer(destination);
+            // 设置消息生产者传递模式为持久化模式
+            producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+            // 一定要在完成持久化传递模式之后才启动连接
+            connection.start();
         } catch (JMSException e) {
             e.printStackTrace();
         }
