@@ -1,4 +1,4 @@
-package com.zheng.mq.message.delayperiod;
+package com.zheng.mq.messagetransform;
 
 import com.zheng.mq.Constants;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -9,9 +9,9 @@ import org.junit.Test;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.MapMessage;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
-import javax.jms.TextMessage;
 import java.util.Optional;
 
 /**
@@ -42,18 +42,12 @@ public class QueueReceiver {
     }
 
     @Test
-    public void receiveTextMessage() throws JMSException {
-        String text = null;
-        TextMessage textMessage = (TextMessage) consumer.receive();
-        while(Optional.ofNullable(textMessage).isPresent()) {
-            try {
-                text = textMessage.getText();
-            } catch (JMSException e) {
-                e.printStackTrace();
-            }
-            System.out.println("Received: " + text);
+    public void receiveMapMessage() throws JMSException {
+        MapMessage mapMessage = (MapMessage) consumer.receive();
+        while(Optional.ofNullable(mapMessage).isPresent()) {
+            System.out.println("Received: " + mapMessage.getString("key"));
             session.commit();
-            textMessage = (TextMessage) consumer.receive();
+            mapMessage = (MapMessage) consumer.receive();
         }
     }
 
