@@ -2,16 +2,19 @@ package com.zheng.mq.advisorymessage;
 
 import com.zheng.mq.Constants;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.advisory.AdvisorySupport;
 import org.apache.activemq.command.ActiveMQMessage;
+import org.apache.activemq.command.ActiveMQTopic;
+import org.apache.activemq.command.DataStructure;
 import org.apache.activemq.command.ProducerInfo;
 
 import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
-import javax.jms.Topic;
 
 /**
  * 持久Topic消息接收者
@@ -21,6 +24,7 @@ import javax.jms.Topic;
  */
 public class QR {
     private static final String BROKER_URL = Constants.BROKER_URL;
+    private static final String TOPIC = Constants.TOPIC;
 
     private static Connection connection;
     private static Session session;
@@ -34,7 +38,13 @@ public class QR {
             connection.start();
             
             session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-            Topic destination = session.createTopic("ActiveMQ.Advisory.Producer.Topic.my_topic");
+            // 直接使用普通创建topic的方式
+//            Topic destination = session.createTopic("ActiveMQ.Advisory.Producer.Topic.my_topic");
+            
+            // 通过AdvisorySupport方式
+            Destination dest = session.createTopic(TOPIC);
+            ActiveMQTopic destination = AdvisorySupport.getProducerAdvisoryTopic(dest);
+
             consumer = session.createConsumer(destination);
 
             consumer.setMessageListener(new MessageListener() {
@@ -43,8 +53,14 @@ public class QR {
                     try {
                         if (message instanceof ActiveMQMessage) {
                             ActiveMQMessage aMsg = (ActiveMQMessage) message;
-                            ProducerInfo prod = (ProducerInfo) aMsg.getDataStructure();
-                            System.out.println(prod);
+                            DataStructure dataStructure = aMsg.getDataStructure();
+                            if (dataStructure instanceof ProducerInfo) {
+                                ProducerInfo prod = (ProducerInfo) dataStructure;
+                                System.out.println(prod);
+                            } else {
+                                System.out.println(dataStructure);
+                            }
+                            
                         }
                     }catch(Exception e) {
                         e.printStackTrace();
