@@ -49,7 +49,7 @@ public class PersistenceTopicSender {
     @Test
     public void sendTextMessage() throws JMSException {
         TextMessage msg;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             msg = session.createTextMessage("message----" + (i + 1));
             producer.send(msg);
             session.commit();
