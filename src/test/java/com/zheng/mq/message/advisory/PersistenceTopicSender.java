@@ -1,4 +1,4 @@
-package com.zheng.mq.advisorymessage;
+package com.zheng.mq.message.advisory;
 
 import com.zheng.mq.Constants;
 import org.apache.activemq.ActiveMQConnectionFactory;

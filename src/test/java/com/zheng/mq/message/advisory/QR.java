@@ -1,4 +1,4 @@
-package com.zheng.mq.advisorymessage;
+package com.zheng.mq.message.advisory;
 
 import com.zheng.mq.Constants;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -34,14 +34,13 @@ public class QR {
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(BROKER_URL);
         try {
             connection = factory.createConnection();
-            // 一定要在设置完参数之后再启动
             connection.start();
             
             session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-            // 直接使用普通创建topic的方式
+            // 方法1. 直接使用普通创建topic的方式
 //            Topic destination = session.createTopic("ActiveMQ.Advisory.Producer.Topic.my_topic");
             
-            // 通过AdvisorySupport方式
+            // 方法2. 通过AdvisorySupport方式
             Destination dest = session.createTopic(TOPIC);
             ActiveMQTopic destination = AdvisorySupport.getProducerAdvisoryTopic(dest);
 
